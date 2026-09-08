@@ -1,0 +1,14 @@
+# 데이터셋 경로 및 메타데이터 설정
+dataset_root: "/home/hs/rang/robot_vision2_gemini/dataset/validation_v0"
+splits_file: "data/splits/v0_splits.json"
+
+# 원본 해상도: 1920x1080
+image_width: 1920
+image_height: 1080
+
+# 서브 디렉토리
+dirs:
+  images: "images"
+  segmentation: "segmentation"
+  detection: "detection"
+  metadata: "metadata"

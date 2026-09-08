@@ -1,0 +1,27 @@
+# PIDNet-S 학습 파라미터
+model:
+  name: "pidnet_s"
+  num_classes: 3
+  m: 32   # base channels
+  input_size: [288, 512]  # [H, W] 16:9 비율
+
+dataset:
+  config: "config/dataset.yaml"
+  classes: "config/classes.yaml"
+
+training:
+  batch_size: 16
+  epochs: 20
+  learning_rate: 0.001
+  min_lr: 0.00001
+  weight_decay: 0.0005
+  warmup_epochs: 2
+  device: "auto"
+  num_workers: 4
+  seed: 42
+  amp: true
+  class_weights: [2.0, 10.0, 0.5]  # drivable, caution, non_drivable
+
+output:
+  dir: "outputs/checkpoints/segmentation"
+  save_best_metric: "mIoU"

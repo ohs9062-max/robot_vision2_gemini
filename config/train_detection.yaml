@@ -1,0 +1,32 @@
+# RTMDet-s 학습 파라미터
+model:
+  name: "rtmdet_s"
+  num_classes: 4
+  input_size: [640, 640]  # [H, W]
+
+dataset:
+  config: "config/dataset.yaml"
+  classes: "config/classes.yaml"
+
+training:
+  batch_size: 16
+  epochs: 20
+  learning_rate: 0.001
+  min_lr: 0.00001
+  weight_decay: 0.05
+  warmup_epochs: 2
+  device: "auto"
+  num_workers: 4
+  seed: 42
+  negative_ratio: 1.0
+  amp: true  # Automatic Mixed Precision
+  grad_clip: 35.0
+
+loss:
+  cls_weight: 1.0
+  box_weight: 2.0
+  iou_type: "ciou"  # ciou or giou
+
+output:
+  dir: "outputs/checkpoints/detection"
+  save_best_metric: "mAP50"

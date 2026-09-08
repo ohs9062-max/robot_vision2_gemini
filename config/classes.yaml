@@ -1,0 +1,31 @@
+# Robot Vision 확정 클래스 정의
+detection:
+  classes:
+    - step
+    - ditch_hole
+    - puddle
+    - obstacle
+  id_to_name:
+    0: step
+    1: ditch_hole
+    2: puddle
+    3: obstacle
+  colors:
+    0: [255, 215, 0]    # Gold / Yellow
+    1: [148, 0, 211]    # Dark Violet / Purple
+    2: [0, 191, 255]    # Deep Sky Blue
+    3: [255, 69, 0]     # Red-Orange
+
+segmentation:
+  classes:
+    - drivable
+    - caution
+    - non_drivable
+  id_to_name:
+    0: drivable
+    1: caution
+    2: non_drivable
+  palette:
+    0: [0, 200, 0]      # Drivable: Green
+    1: [0, 215, 255]    # Caution: Yellow/Gold
+    2: [0, 0, 220]      # Non-drivable: Red

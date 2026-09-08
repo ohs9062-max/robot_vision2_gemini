@@ -1,0 +1,15 @@
+# 개발 PC에서 먼저 확인하기 위한 보수적 기본값입니다.
+# device: auto 는 CUDA가 있으면 CUDA, 없으면 CPU를 사용합니다.
+model: fasterrcnn_mobilenet_v3_large_320_fpn
+pretrained: true
+image_size: 640
+batch_size: 2
+epochs: 10
+learning_rate: 0.0005
+weight_decay: 0.0001
+device: auto
+workers: 0
+seed: 42
+dataset_path: data/prepared
+classes_path: config/classes.yaml
+output_path: outputs/training
