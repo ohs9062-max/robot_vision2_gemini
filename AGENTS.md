@@ -1,0 +1,521 @@
+# AGENTS.md — Robot Vision 데이터 라벨링 작업 규칙
+
+이 파일은 `robot_vision` 데이터 라벨링 작업을 수행하는 AI 에이전트의
+작업 절차와 준수사항을 정의한다.
+
+라벨 의미와 데이터 형식의 기준 문서는 다음 파일 하나다.
+
+```text
+AI모델_데이터라벨링.md
+```
+
+이 문서는 기준 ODT의 본문과 삽입 이미지·표·요약 인포그래픽의 내용까지 확인하여 AI 작업용 Markdown으로 옮긴 문서다.
+에이전트는 ODT를 다시 해석하거나,
+다른 문서의 규칙을 섞거나,
+문서에 없는 별도 정책을 임의로 추가하지 않는다.
+
+---
+
+# 1. 작업 시작 시 반드시 수행
+
+1. 이 `AGENTS.md` 전체를 읽는다.
+2. `AI모델_데이터라벨링.md` 전체를 처음부터 끝까지 읽는다.
+3. 라벨 정의, 판단 기준, 저장 구조, 파일명, 확장자, 메타데이터 형식을 확인한다.
+4. 이후 모든 데이터 라벨링 작업은 `AI모델_데이터라벨링.md` 기준으로 수행한다.
+
+사용자 지시와 `AI모델_데이터라벨링.md`가 충돌하지 않는 한
+문서 내용을 임의로 바꾸지 않는다.
+
+비슷한 이름의 과거 명세서나 다른 버전의 문서를
+임의로 기준 문서로 사용하지 않는다.
+
+## 1.1 ODT 이미지 내용 누락 금지
+
+일반 데이터 라벨링 작업에서는 `AI모델_데이터라벨링.md`를 기준으로 작업한다.
+
+단, ODT와 Markdown의 정합성을 다시 검증하거나
+Markdown을 ODT에서 다시 생성하는 작업을 수행할 때는
+문단 텍스트만 추출해서 끝내지 않는다.
+
+반드시 ODT 안에 삽입된 모든 이미지·표·요약 인포그래픽을 실제로 열어 확인한다.
+
+특히 ODT 마지막 요약 인포그래픽에 포함된 다음 정보가 누락되면 실패다.
+
+```text
+Segmentation 표시색
+drivable     = 초록
+caution      = 노랑
+non_drivable = 빨강
+
+Detection BBox 표시색
+step         = 보라
+ditch_hole   = 파랑
+puddle       = 하늘색
+obstacle     = 주황
+```
+
+ODT는 HEX/RGB 숫자값을 별도로 정의하지 않으므로
+숫자 색상값을 임의로 만들어 규칙으로 추가하지 않는다.
+
+다음 레퍼런스 이미지는 파일럿 및 Overlay 품질 검수에 사용한다.
+
+```text
+라벨링_정답_레퍼런스/
+├── 00_ODT_요약_인포그래픽.png
+├── 01_일반_농로.png
+├── 02_얕은_물웅덩이.png
+├── 03_15cm_턱.png
+├── 04_25cm_턱.png
+├── 05_깊은_구덩이.png
+└── 06_큰_돌_장애물.png
+```
+
+예시의 Class 적용:
+
+```text
+일반 농로
+→ drivable / Detection 없음
+
+얕은 물웅덩이
+→ caution + puddle
+
+15 cm 턱
+→ caution + step
+
+25 cm 턱
+→ non_drivable + step
+
+깊은 구덩이
+→ non_drivable + ditch_hole
+
+큰 돌(장애물)
+→ non_drivable + obstacle
+```
+
+---
+
+# 2. 작업 목적
+
+과수원 및 노지환경의 카메라 영상에서
+로봇의 주행 가능 영역과 주행을 방해하는 위험요소를 라벨링한다.
+
+판단 기준은 사람의 보행 가능 여부가 아니라
+실제 로봇의 차폭, 바퀴, 서스펜션 및 주행성능이다.
+
+```text
+Detection
+= 앞에 무엇이 있는가?
+
+Segmentation
+= 그 영역을 로봇이 갈 수 있는가?
+```
+
+---
+
+# 3. Segmentation Class
+
+```text
+0 = drivable
+1 = caution
+2 = non_drivable
+```
+
+| ID | Class | 판단 기준 |
+|---:|---|---|
+| 0 | `drivable` | 정상적으로 통과 가능 |
+| 1 | `caution` | 통과 가능하지만 감속 또는 주의 필요 |
+| 2 | `non_drivable` | 통과 위험 또는 불가능, 회피 필요 |
+
+대표 판단:
+
+```text
+평탄한 농로
+→ drivable
+
+일반 흙길 또는 자갈길
+→ drivable
+
+풀이 있어도 정상 통과 가능
+→ drivable
+
+큰 요철
+→ caution
+
+얕은 물웅덩이
+→ caution
+
+통과 가능한 고랑
+→ caution
+
+20 cm 이하의 턱
+→ caution
+
+깊은 고랑 또는 구덩이
+→ non_drivable
+
+깊이를 판단하기 어려운 물웅덩이
+→ non_drivable
+
+20 cm를 초과하는 턱
+→ non_drivable
+
+진행을 막는 큰 돌·나무·구조물
+→ non_drivable
+```
+
+---
+
+# 4. 턱 판단 기준
+
+로봇은 최대 20 cm 높이의 턱을 통과할 수 있는 것으로 가정한다.
+
+```text
+20 cm 이하
+→ caution
+→ 감속하여 통과 가능
+
+20 cm 초과
+→ non_drivable
+→ 회피 필요
+```
+
+단일 영상만으로 실제 턱 높이를 정확하게 확인하기 어려운 경우
+임의로 높이를 추정하지 않는다.
+
+---
+
+# 5. Detection Class
+
+```text
+0 = step
+1 = ditch_hole
+2 = puddle
+3 = obstacle
+```
+
+| ID | Class | 라벨 대상 |
+|---:|---|---|
+| 0 | `step` | 로봇 진행방향의 턱 |
+| 1 | `ditch_hole` | 고랑 및 구덩이 |
+| 2 | `puddle` | 물웅덩이 |
+| 3 | `obstacle` | 돌, 나무, 구조물 등 일반 장애물 |
+
+고랑과 구덩이는 1차년도에 `ditch_hole` 하나의 Detection Class로 관리한다.
+
+Bounding Box는 실제 위험요소의 외곽에 최대한 밀착하여 생성하고,
+불필요한 배경이 포함되지 않도록 한다.
+
+---
+
+# 6. Detection + Segmentation 적용 기준
+
+| 실제 상황 | Detection | Segmentation | 주행 판단 |
+|---|---|---|---|
+| 15 cm 턱 | `step` | `caution` | 감속 후 통과 |
+| 25 cm 턱 | `step` | `non_drivable` | 회피 |
+| 얕은 물웅덩이 | `puddle` | `caution` | 감속 후 통과 |
+| 깊은 물웅덩이 | `puddle` | `non_drivable` | 회피 |
+| 통과 가능한 얕은 고랑 | `ditch_hole` | `caution` | 감속 후 통과 |
+| 깊은 구덩이 | `ditch_hole` | `non_drivable` | 회피 |
+| 진행을 막는 큰 돌 | `obstacle` | `non_drivable` | 회피 |
+
+Detection Class를
+`step_passable`, `step_non_passable`처럼 별도로 나누지 않는다.
+
+---
+
+# 7. 공통 라벨링 규칙
+
+1. 사람이 아니라 실제 로봇의 주행성능을 기준으로 판단한다.
+2. 영상에서 실제로 보이는 영역만 라벨링한다.
+3. 가려진 지면을 임의로 추정하지 않는다.
+4. 그림자는 장애물로 판단하지 않는다.
+5. 그림자가 있어도 실제 주행 가능한 지면이면 `drivable`로 처리한다.
+6. 흙, 풀, 자갈 등의 종류보다 실제 통과 가능 여부를 우선한다.
+7. 통과 가능하지만 감속이 필요하면 `caution`으로 처리한다.
+8. 통과 위험성이 높거나 불가능하면 `non_drivable`로 처리한다.
+9. Bounding Box는 실제 위험요소 외곽에 최대한 밀착한다.
+10. 동일하거나 유사한 상황에는 동일한 기준을 적용한다.
+11. 단일 영상으로 정확한 턱 높이를 알 수 없으면 임의 추정하지 않는다.
+12. 동일하거나 거의 유사한 연속 프레임을 과도하게 사용하지 않는다.
+13. 30 FPS 영상에서 약 1~2 FPS 샘플링은 예시일 뿐 고정 규칙이 아니다.
+
+---
+
+# 8. 최종 데이터 저장 구조 — 반드시 준수
+
+최종 데이터는 반드시 아래 4개 폴더로 분리한다.
+
+```text
+dataset/
+├── images/
+│   ├── frame_000001.jpg
+│   ├── frame_000002.jpg
+│   └── ...
+├── segmentation/
+│   ├── frame_000001.png
+│   ├── frame_000002.png
+│   └── ...
+├── detection/
+│   ├── frame_000001.txt
+│   ├── frame_000002.txt
+│   └── ...
+└── metadata/
+    ├── frame_000001.json
+    ├── frame_000002.json
+    └── ...
+```
+
+최종 파일명과 확장자는 위 형식을 그대로 사용한다.
+
+```text
+images          = frame_XXXXXX.jpg
+segmentation    = frame_XXXXXX.png
+detection       = frame_XXXXXX.txt
+metadata        = frame_XXXXXX.json
+```
+
+임의로 `.png` 이미지로 저장하거나,
+다른 확장자를 유지하거나,
+파일명에 `_final`, `_fixed`, `_new` 등의 접미사를 추가하지 않는다.
+
+---
+
+# 9. Frame ID 규칙 — 반드시 1:1 대응
+
+하나의 Frame과 관련된 모든 파일은 동일한 Frame ID를 사용한다.
+
+예:
+
+```text
+images/frame_000123.jpg
+segmentation/frame_000123.png
+detection/frame_000123.txt
+metadata/frame_000123.json
+```
+
+즉 다음 네 파일은 반드시 같은 Frame이다.
+
+```text
+frame_000123.jpg
+frame_000123.png
+frame_000123.txt
+frame_000123.json
+```
+
+Frame ID를 임의로 재배치하거나
+파일 간 대응 관계를 깨뜨리지 않는다.
+
+---
+
+# 10. Segmentation 저장 형식
+
+Segmentation 결과는 이미지와 동일한 크기의 Mask 이미지로 저장한다.
+
+파일:
+
+```text
+segmentation/frame_XXXXXX.png
+```
+
+Mask Class ID:
+
+```text
+0 = drivable
+1 = caution
+2 = non_drivable
+```
+
+---
+
+# 11. Detection 저장 형식
+
+Detection 파일:
+
+```text
+detection/frame_XXXXXX.txt
+```
+
+YOLO 형식:
+
+```text
+<class_id> <center_x> <center_y> <width> <height>
+```
+
+Class ID:
+
+```text
+0 = step
+1 = ditch_hole
+2 = puddle
+3 = obstacle
+```
+
+---
+
+# 12. Metadata 작성 규칙 — 양식 변경 금지
+
+Metadata 파일:
+
+```text
+metadata/frame_XXXXXX.json
+```
+
+사용 항목:
+
+```text
+frame_id
+location
+weather
+surface_condition
+camera
+note
+```
+
+JSON 구조:
+
+```json
+{
+  "frame_id": "frame_000123",
+  "location": "orchard_01",
+  "weather": "after_rain",
+  "surface_condition": "wet",
+  "camera": "front_camera",
+  "note": [
+    "puddle",
+    "step"
+  ]
+}
+```
+
+`weather` 값:
+
+```text
+sunny
+cloudy
+after_rain
+```
+
+의미:
+
+```text
+sunny      = 맑음
+cloudy     = 흐림
+after_rain = 비 온 후
+```
+
+`surface_condition` 값:
+
+```text
+dry
+wet
+```
+
+의미:
+
+```text
+dry = 건조
+wet = 젖음
+```
+
+Metadata에 `source_filename` 등
+`AI모델_데이터라벨링.md`에 정의되지 않은 필드를
+임의로 추가하지 않는다.
+
+Metadata key 이름을 변경하지 않는다.
+
+---
+
+# 13. 데이터 양식 검증
+
+작업 결과는 최소한 다음을 검증한다.
+
+```text
+images/frame_XXXXXX.jpg
+segmentation/frame_XXXXXX.png
+detection/frame_XXXXXX.txt
+metadata/frame_XXXXXX.json
+```
+
+확인 항목:
+
+- 모든 Frame의 4개 파일 존재 여부
+- Frame ID 1:1 대응 여부
+- image 확장자가 `.jpg`인지
+- segmentation 확장자가 `.png`인지
+- detection 확장자가 `.txt`인지
+- metadata 확장자가 `.json`인지
+- Segmentation Class가 0/1/2인지
+- 검수 Overlay의 Segmentation 표시가 drivable=초록, caution=노랑, non_drivable=빨강인지
+- Detection Class가 0/1/2/3인지
+- 검수 Overlay의 Detection BBox 표시가 step=보라, ditch_hole=파랑, puddle=하늘색, obstacle=주황인지
+- Metadata key가 정해진 6개 항목인지
+- `weather` 값이 `sunny/cloudy/after_rain` 중 하나인지
+- `surface_condition` 값이 `dry/wet` 중 하나인지
+
+양식이 다르면 완료로 처리하지 않는다.
+
+---
+
+# 14. 금지사항
+
+다음은 금지한다.
+
+- `AI모델_데이터라벨링.md`에 없는 별도 라벨 정책 추가
+- 다른 과거 명세서의 규칙 혼합
+- ODT를 다시 해석하여 Markdown 명세와 다른 규칙 생성
+- 사람의 보행 기준으로 주행 가능 여부 판단
+- 가려진 지면 추정
+- 그림자를 장애물로 판단
+- 흙/풀/자갈 종류 자체만으로 Class 결정
+- 단일 영상에서 턱 높이를 임의 추정
+- Detection Class 임의 추가 또는 분리
+- Bounding Box를 실제 대상보다 과도하게 크게 생성
+- `images`를 `.jpg` 이외 확장자로 최종 저장
+- `segmentation`을 `.png` 이외 확장자로 저장
+- `detection`을 `.txt` 이외 확장자로 저장
+- `metadata`를 `.json` 이외 확장자로 저장
+- Frame ID 불일치
+- Metadata key 임의 변경
+- Metadata에 명세에 없는 필드 임의 추가
+- `weather`에 정해지지 않은 값 사용
+- `surface_condition`에 정해지지 않은 값 사용
+
+---
+
+# 15. 작업 완료 조건
+
+다음 조건을 모두 만족해야 데이터 라벨링 작업 완료로 보고한다.
+
+1. Segmentation이 `drivable / caution / non_drivable` 기준에 맞는다.
+2. Detection이 `step / ditch_hole / puddle / obstacle` 기준에 맞는다.
+3. 실제 로봇의 주행성능 기준으로 판단했다.
+4. 가려진 지면을 임의 추정하지 않았다.
+5. Bounding Box가 실제 위험요소 외곽에 밀착되어 있다.
+6. 최종 파일 구조가 정확하다.
+7. `images/frame_XXXXXX.jpg` 형식을 지켰다.
+8. `segmentation/frame_XXXXXX.png` 형식을 지켰다.
+9. `detection/frame_XXXXXX.txt` 형식을 지켰다.
+10. `metadata/frame_XXXXXX.json` 형식을 지켰다.
+11. 모든 Frame ID가 1:1 대응한다.
+12. Metadata 양식과 값 정의를 지켰다.
+13. 동일하거나 거의 유사한 연속 프레임을 과도하게 사용하지 않았다.
+
+---
+
+# 16. AI 응답 규칙
+
+실제로 수행한 작업과 수행하지 않은 작업을 구분해서 보고한다.
+
+문서에 없는 기준을 새로 만들었다고 보고하지 않는다.
+
+양식 검증이 끝나지 않았으면
+`완료`라고 보고하지 않는다.
+
+작업 보고 마지막에는 반드시 다음 제목을 포함한다.
+
+```text
+해당 코드 작업에서 내가 알아야 할 것 3줄 요약
+```
+
+정확히 3줄로 작성한다.
