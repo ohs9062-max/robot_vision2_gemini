@@ -11,10 +11,10 @@ detection:
     2: puddle
     3: obstacle
   colors:
-    0: [255, 215, 0]    # Gold / Yellow
-    1: [148, 0, 211]    # Dark Violet / Purple
-    2: [0, 191, 255]    # Deep Sky Blue
-    3: [255, 69, 0]     # Red-Orange
+    0: [148, 0, 211]    # step: Purple (ODT reference)
+    1: [0, 0, 255]      # ditch_hole: Blue (ODT reference)
+    2: [0, 191, 255]    # puddle: Deep Sky Blue
+    3: [255, 69, 0]     # obstacle: Red-Orange
 
 segmentation:
   classes:

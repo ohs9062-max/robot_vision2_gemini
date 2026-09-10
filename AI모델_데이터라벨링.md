@@ -561,7 +561,7 @@ ODT를 다시 대조하거나 이 Markdown을 재생성하는 작업이 필요�
 | ID | Class | 색상 |
 |---:|---|---|
 | 0 | `step` | 보라색 |
-| 1 | `ditch_hole` | 분홍색 |
+| 1 | `ditch_hole` | 파랑색 |
 | 2 | `puddle` | 하늘색 |
 | 3 | `obstacle` | 주황색 |
 
