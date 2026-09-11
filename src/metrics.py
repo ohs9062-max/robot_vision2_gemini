@@ -69,7 +69,7 @@ class DetectionMetrics:
             n_gt_class = 0
 
             # Gather predictions and ground truths for class c
-            for rec in self.records:
+            for rec_idx, rec in enumerate(self.records):
                 gt_mask = rec["gt_labels"] == c
                 gt_boxes_c = rec["gt_boxes"][gt_mask]
                 n_gt_class += len(gt_boxes_c)
@@ -84,8 +84,9 @@ class DetectionMetrics:
                         c_preds.append({
                             "score": pred_scores_c[i],
                             "ious": ious[i] if len(gt_boxes_c) > 0 else np.zeros((0,)),
-                            "gt_count": len(gt_boxes_c),
-                            "matched_gt": np.zeros((len(self.iou_thresholds), len(gt_boxes_c)), dtype=bool),
+                            # image this prediction belongs to -- needed so gt_idx below is
+                            # scoped per-image, not treated as a dataset-global GT index.
+                            "rec_idx": rec_idx,
                         })
 
             if n_gt_class == 0:
@@ -99,56 +100,31 @@ class DetectionMetrics:
             # Sort predictions by descending score
             c_preds.sort(key=lambda x: x["score"], reverse=True)
 
-            # Evaluate for each IoU threshold
+            # Evaluate for each IoU threshold. Standard greedy matching:
+            # predictions sorted by descending score, each claims its best
+            # still-unclaimed ground-truth box (>= iou_thresh) in ITS OWN
+            # image. The match key must be (rec_idx, gt_idx) -- gt_idx alone
+            # is only meaningful within one image, and using id(p) (unique
+            # per prediction) as previously done never actually blocked a
+            # second prediction from claiming an already-matched GT box,
+            # silently double-counting true positives.
             for t_idx, iou_thresh in enumerate(self.iou_thresholds):
                 tp = np.zeros(len(c_preds))
                 fp = np.zeros(len(c_preds))
-                gt_matched = [set() for _ in range(len(self.records))]
+                gt_matched_flags = set()
 
-                pred_idx = 0
-                for rec_idx, rec in enumerate(self.records):
-                    gt_mask = rec["gt_labels"] == c
-                    gt_boxes_c = rec["gt_boxes"][gt_mask]
-                    pred_mask = rec["pred_labels"] == c
-                    n_preds_img = int(np.sum(pred_mask))
-
-                    if n_preds_img == 0:
-                        continue
-
-                    # Local IoUs for this image
-                    pred_boxes_img = rec["pred_boxes"][pred_mask]
-                    ious_img = self._box_iou_np(pred_boxes_img, gt_boxes_c)
-
-                    for p_i in range(n_preds_img):
-                        assigned_gt = -1
-                        max_iou = 0.0
-                        if len(gt_boxes_c) > 0:
-                            for g_j in range(len(gt_boxes_c)):
-                                if g_j not in gt_matched[rec_idx] and ious_img[p_i, g_j] >= iou_thresh:
-                                    if ious_img[p_i, g_j] > max_iou:
-                                        max_iou = ious_img[p_i, g_j]
-                                        assigned_gt = g_j
-
-                        # Find the global index in c_preds matching this detection
-                        # For AP calculation, standard match
-                        pred_idx += 1
-
-                # 11-point or all-point AP
-                # Simplified robust AP at this threshold
-                # Match predictions against GT
-                gt_matched_flags = {}
                 for idx, p in enumerate(c_preds):
                     ious = p["ious"]
                     best_gt = -1
                     best_iou = 0.0
                     for g_idx in range(len(ious)):
-                        if (id(p), g_idx) not in gt_matched_flags and ious[g_idx] >= iou_thresh:
+                        if (p["rec_idx"], g_idx) not in gt_matched_flags and ious[g_idx] >= iou_thresh:
                             if ious[g_idx] > best_iou:
                                 best_iou = ious[g_idx]
                                 best_gt = g_idx
                     if best_gt >= 0:
                         tp[idx] = 1
-                        gt_matched_flags[(id(p), best_gt)] = True
+                        gt_matched_flags.add((p["rec_idx"], best_gt))
                     else:
                         fp[idx] = 1
 

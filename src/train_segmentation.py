@@ -5,10 +5,12 @@ Scratch training without unverified commercial pretrained weights.
 """
 
 import argparse
+import random
 import time
 from pathlib import Path
 from typing import Dict, Any
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torch.amp import autocast, GradScaler
@@ -64,6 +66,19 @@ def main():
     class_names = classes_cfg["segmentation"]["classes"]
     num_classes = len(class_names)
     img_size = tuple(config["model"]["input_size"])  # [H, W]
+
+    # config declares a seed but nothing previously consumed it -- every run
+    # got a genuinely random model init / dataloader shuffle / flip-augment
+    # order, which on a class as pixel-rare as "caution" was enough by
+    # itself to swing its val IoU wildly (0.22 -> 0.02) between two runs on
+    # the *same* data, making it impossible to tell a real data/augmentation
+    # effect apart from run-to-run noise. Seed everything so comparisons
+    # across runs are actually comparing the thing being changed.
+    seed = int(config["training"].get("seed", 42))
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
     epochs = args.epochs or int(config["training"]["epochs"])
     batch_size = args.batch_size or int(config["training"]["batch_size"])

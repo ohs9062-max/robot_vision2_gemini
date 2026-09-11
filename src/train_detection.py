@@ -6,10 +6,12 @@ Scratch training without unverified commercial pretrained weights.
 
 import argparse
 import json
+import random
 import time
 from pathlib import Path
 from typing import Dict, Any
 
+import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torch.amp import autocast, GradScaler
@@ -72,6 +74,14 @@ def main():
     class_names = classes_cfg["detection"]["classes"]
     num_classes = len(class_names)
     img_size = tuple(config["model"]["input_size"])
+
+    # same fix as train_segmentation.py -- config declared a seed nothing
+    # actually consumed, so every run was genuinely unreproducible.
+    seed = int(config["training"].get("seed", 42))
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
     epochs = args.epochs or int(config["training"]["epochs"])
     batch_size = args.batch_size or int(config["training"]["batch_size"])

@@ -1,6 +1,9 @@
 # 데이터셋 경로 및 메타데이터 설정
-dataset_root: "/home/hs/rang/robot_vision2_gemini/dataset/validation_v0"
-splits_file: "data/splits/v0_splits.json"
+# NOTE: validation_v0의 segmentation/detection 1.5만장은 더미(가짜) 라벨이다
+# (drivable/non_drivable 2클래스만 존재, caution 전무 -- 실제 판단 결과가 아님).
+# 실제 astra/terra/agy 판단 + SAM2 정밀화를 거친 golden_set(108장)을 학습 데이터로 사용한다.
+dataset_root: "/home/hs/rang/robot_vision2_gemini/dataset/golden_set"
+splits_file: "data/splits/golden_set_splits.json"
 
 # 원본 해상도: 1920x1080
 image_width: 1920
