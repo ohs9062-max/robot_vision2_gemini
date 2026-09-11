@@ -1,0 +1,11 @@
+{
+  "frame_id": "frame_005555",
+  "location": "forest",
+  "weather": "cloudy",
+  "surface_condition": "dry",
+  "camera": "front_camera",
+  "note": [
+    "obstacle",
+    "puddle"
+  ]
+}

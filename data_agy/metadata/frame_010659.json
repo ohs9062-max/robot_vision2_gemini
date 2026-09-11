@@ -1,0 +1,10 @@
+{
+  "frame_id": "frame_010659",
+  "location": "roadside",
+  "weather": "after_rain",
+  "surface_condition": "wet",
+  "camera": "front_camera",
+  "note": [
+    "obstacle"
+  ]
+}
