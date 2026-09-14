@@ -29,11 +29,15 @@ class RTMDetS(nn.Module):
         depth: float = 0.33,
         conf_threshold: float = 0.25,
         nms_threshold: float = 0.45,
+        cls_weight: float = 1.0,
+        box_weight: float = 2.0,
     ):
         super().__init__()
         self.num_classes = num_classes
         self.conf_threshold = conf_threshold
         self.nms_threshold = nms_threshold
+        self.cls_weight = cls_weight
+        self.box_weight = box_weight
 
         self.backbone = CSPNeXt(width=width, depth=depth)
         neck_channels = int(256 * width)  # 128
@@ -86,6 +90,8 @@ class RTMDetS(nn.Module):
                 bbox_preds=bbox_preds,
                 gt_boxes_list=targets["boxes"],
                 gt_labels_list=targets["labels"],
+                cls_weight=self.cls_weight,
+                box_weight=self.box_weight,
             )
 
         # 3. PyTorch Inference mode with NMS
@@ -140,7 +146,13 @@ class RTMDetS(nn.Module):
         return results
 
 
-def build_rtmdet_s(num_classes: int = 4, conf_thresh: float = 0.25, nms_thresh: float = 0.45) -> RTMDetS:
+def build_rtmdet_s(
+    num_classes: int = 4,
+    conf_thresh: float = 0.25,
+    nms_thresh: float = 0.45,
+    cls_weight: float = 1.0,
+    box_weight: float = 2.0,
+) -> RTMDetS:
     """Build pure PyTorch RTMDet-s model."""
     return RTMDetS(
         num_classes=num_classes,
@@ -148,4 +160,6 @@ def build_rtmdet_s(num_classes: int = 4, conf_thresh: float = 0.25, nms_thresh: 
         depth=0.33,
         conf_threshold=conf_thresh,
         nms_threshold=nms_thresh,
+        cls_weight=cls_weight,
+        box_weight=box_weight,
     )

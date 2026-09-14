@@ -112,7 +112,11 @@ def main():
     val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=detection_collate_fn)
 
     # Model
-    model = build_rtmdet_s(num_classes=num_classes).to(device)
+    loss_cfg = config.get("loss", {})
+    cls_weight = float(loss_cfg.get("cls_weight", 1.0))
+    box_weight = float(loss_cfg.get("box_weight", 2.0))
+    logger.info("Loss weights: cls_weight=%.2f box_weight=%.2f", cls_weight, box_weight)
+    model = build_rtmdet_s(num_classes=num_classes, cls_weight=cls_weight, box_weight=box_weight).to(device)
     optimizer = torch.optim.AdamW(
         model.parameters(),
         lr=lr,

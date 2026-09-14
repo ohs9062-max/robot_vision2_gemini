@@ -161,6 +161,8 @@ class RTMDetHead(nn.Module):
         bbox_preds: List[torch.Tensor],
         gt_boxes_list: List[torch.Tensor],
         gt_labels_list: List[torch.Tensor],
+        cls_weight: float = 1.0,
+        box_weight: float = 2.0,
     ) -> Dict[str, torch.Tensor]:
         device = cls_scores[0].device
         batch_size = cls_scores[0].shape[0]
@@ -249,7 +251,10 @@ class RTMDetHead(nn.Module):
         loss_cls_norm = total_cls_loss / norm_pos
         loss_box_norm = total_box_loss / norm_pos
 
-        loss_total = loss_cls_norm + 2.0 * loss_box_norm
+        # cls_weight/box_weight previously hardcoded (1.0 implicit, 2.0) and
+        # never actually connected to config's loss.cls_weight/box_weight --
+        # those YAML values looked live but were dead, silently ignored.
+        loss_total = cls_weight * loss_cls_norm + box_weight * loss_box_norm
 
         return {
             "loss_cls": loss_cls_norm,

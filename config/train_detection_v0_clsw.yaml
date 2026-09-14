@@ -1,0 +1,35 @@
+# RTMDet-s -- validation_v0, cls_weight을 box_weight보다 높여서 정밀도(precision)
+# 개선을 시도하는 버전. 기존 loss.cls_weight/box_weight는 코드에 실제로 연결이
+# 안 돼있던 죽은 설정값이었고, 이번에 head.py/rtmdet.py를 고쳐서 실제로 반영되게
+# 했다 -- 그 수정을 검증하는 실행이기도 하다.
+model:
+  name: "rtmdet_s"
+  num_classes: 4
+  input_size: [640, 640]
+
+dataset:
+  config: "config/dataset_detection_v0.yaml"
+  classes: "config/classes.yaml"
+
+training:
+  batch_size: 16
+  epochs: 20
+  learning_rate: 0.001
+  min_lr: 0.00001
+  weight_decay: 0.05
+  warmup_epochs: 2
+  device: "auto"
+  num_workers: 4
+  seed: 42
+  negative_ratio: 1.0
+  amp: true
+  grad_clip: 35.0
+
+loss:
+  cls_weight: 2.0
+  box_weight: 1.0
+  iou_type: "ciou"
+
+output:
+  dir: "outputs/checkpoints/detection_v0_clsw"
+  save_best_metric: "mAP50"
